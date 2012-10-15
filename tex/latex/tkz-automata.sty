@@ -1,0 +1,214 @@
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{tkz-automata}[2010/09/18 Automata LaTeX package]
+
+\RequirePackage{ifthen}
+\RequirePackage{tikz}
+\RequirePackage{tkz-berge}
+\usetikzlibrary{arrows}
+\usetikzlibrary{calc}
+
+\newcommand{\automata}[2][2cm]{
+  \begin{tikzpicture}[baseline=(current bounding box.center),>=stealth',style={->},node distance=#1]
+    \SetVertexMath
+    #2
+  \end{tikzpicture}
+}
+
+% \initial[<position>]{<node_name>}
+% <position>: left | right
+\newcommand{\initial}[2][left]{
+  \ifthenelse{\equal{left}{#1}}%
+    {\draw[<-,thick] (#2.180) -- +(-1,0) ;}{}
+  \ifthenelse{\equal{right}{#1}}%
+    {\draw[<-,thick] (#2.0) -- +(1,0) ;}{}
+}
+
+% \accepting{<list of state names>}
+\newcommand{\accepting}[1]{
+\foreach \end in {#1}{%
+  \draw (\end) [late options={after node path={
+                      (\tikzlastnode)
+                        let \p1 = ($ (\tikzlastnode.center) - (\tikzlastnode.east) + (0.7mm,0) $) in
+                      circle ({veclen(\x1,\y1)})}}];%
+}}
+
+% \arc[bending]{from}{to}{label}
+% bending = left | right | none (Default: none)
+\newcommand{\arc}[4][]{
+\ifthenelse{\equal{left}{#1}}%
+    {\Edge[label={#4},style={bend left}]}% left
+{\ifthenelse{\equal{right}{#1}}%
+    {\Edge[label={#4},style={bend right}]}% right
+    {\Edge[label={#4},style={->}]}% none
+}(#2)(#3)}
+
+% \arc[bending]{from}{to}{label}
+% bending = left | right | none (Default: none)
+\newcommand{\arcLabelAbove}[4][]{
+\ifthenelse{\equal{left}{#1}}%
+    {\Edge[label={#4},style={bend left}](#2)(#3)}% left
+{\ifthenelse{\equal{right}{#1}}%
+    {\Edge[label={#4},style={bend right}](#2)(#3)}% right
+    {\draw[->,thick] (#2) -- (#3) node[midway,above,text width=5cm,text centered] {#4};}% none
+}%
+}
+
+% \loopArc[posicion]{nombre}{etiqueta}
+\newcommand{\loopArc}[3][n]{
+  \ifthenelse{\equal{n}{#1}}%
+  {\draw[->,thick] (#2.110) .. controls +(-.5,1) %
+    and +(.5,1) .. node[midway,above,text width=5cm,text centered] {#3} (#2.70);  }{}
+
+  \ifthenelse{\equal{s}{#1}}%
+  {\draw[<-,thick] (#2.250) .. controls +(-.5,-1) %
+    and +(.5,-1) .. node[midway,below,text width=5cm,text centered] {#3} (#2.290);  }{}
+
+  \ifthenelse{\equal{e}{#1}}%
+  {\draw[->,thick] (#2.20) .. controls +(1,.5) %
+    and +(1,-.5) .. node[midway,right,text width=1cm,text centered] {#3} (#2.340);  }{}
+
+  \ifthenelse{\equal{w}{#1}}%
+  {\draw[<-,thick] (#2.160) .. controls +(-1,.5) %
+    and +(-1,-.5) .. node[midway,left,text width=1cm,text centered] {#3} (#2.210);  }{}
+}
+
+\newcommand{\grid}[3][]{%
+\begingroup%
+   \setkeys[GR]{cl}{#1}%
+   \pgfmathsetcounter{tkzb@ca}{#2-1}
+   \pgfmathsetcounter{tkzb@cb}{#3-1}
+   \foreach \x in {0,...,\thetkzb@ca}{%
+      \foreach \y in {0,...,\thetkzb@cb}{%
+      \ifGR@cl@Math\presetkeys [GR] {vertex} {Math = true}{}%
+         \write@math{\cmdGR@cl@RA*\x}{\cmdGR@cl@RB*\y}{\x\y}%
+      \else
+         \write@nomath{\cmdGR@cl@RA*\x}{\cmdGR@cl@RB*\y}{\x;\y}%
+      \fi}%
+   }
+\endgroup%
+}
+
+\newcounter{aactr}
+
+\newcommand{\naturalgrid}[3][]{%
+\begingroup%
+   \setkeys[GR]{cl}{#1}%
+   \pgfmathsetcounter{tkzb@ca}{#2-1}
+   \pgfmathsetcounter{tkzb@cb}{#3-1}
+   \pgfmathsetcounter{tkzb@cc}{0}
+   \setcounter{aactr}{0}
+   \foreach \x in {0,...,\thetkzb@ca}{%
+      \foreach \y in {0,...,\thetkzb@cb}{%
+      \ifGR@cl@Math\presetkeys [GR] {vertex} {Math = true}{}%
+         \write@math{\cmdGR@cl@RA*\x}{\cmdGR@cl@RB*\y}{\theaactr}%
+         \addtocounter{aactr}{1}
+      \else
+         \write@nomath{\cmdGR@cl@RA*\x}{\cmdGR@cl@RB*\y}{\theaactr}%
+         \addtocounter{aactr}{1}
+      \fi}%
+   }
+\endgroup%
+}
+
+\newcommand{\limitedgrid}[4][]{%
+\begingroup%
+   \setkeys[GR]{cl}{#1}%
+   \pgfmathsetcounter{tkzb@ca}{#2-1}
+   \pgfmathsetcounter{tkzb@cb}{#3-1}
+   \pgfmathsetcounter{tkzb@cc}{0}
+   \setcounter{aactr}{0}
+   \foreach \x in {0,...,\thetkzb@ca}{%
+      \foreach \y in {0,...,\thetkzb@cb}{%
+      \ifthenelse{\lengthtest{\theaactr pt < #4 pt}}%
+      {%
+        \ifGR@cl@Math\presetkeys [GR] {vertex} {Math = true}{}%
+           \write@math{\cmdGR@cl@RA*\x}{\cmdGR@cl@RB*\y}{\theaactr}%
+           \addtocounter{aactr}{1}
+        \else
+           \write@nomath{\cmdGR@cl@RA*\x}{\cmdGR@cl@RB*\y}{\theaactr}%
+           \addtocounter{aactr}{1}
+        \fi
+      }{}}%
+   }
+\endgroup%
+}
+
+\newcommand*{\row}[2][]{%
+\begingroup%
+    \setkeys[GR]{cl}{#1}%
+    \pgfmathsetcounter{tkzb@ca}{#2-1}
+    \ifcase\cmdGR@cl@form
+    \or
+      \def\tkzb@result{0}
+       \foreach \x in  {0,...,\thetkzb@ca}{%
+         \pgfmathparse{\cmdGR@cl@RA*(\x)}
+         \let\tkzb@result\pgfmathresult
+         \ifGR@cl@Math%
+           \presetkeys [GR] {vertex} {Math = true}{}%
+           \ifthenelse{\equal{\cmdGR@cl@num}{}}{%
+             \write@math{\tkzb@result}{\cmdGR@cl@RS}{\x}}{%
+             \write@math{\tkzb@result}{\cmdGR@cl@RS}{\x\cmdGR@cl@num}}%
+         \else
+           \ifthenelse{\equal{\cmdGR@cl@num}{}}{%
+             \write@nomath{\tkzb@result}{\cmdGR@cl@RS}{\x}}{%
+             \write@nomath{\tkzb@result}{\cmdGR@cl@RS}{\x\cmdGR@cl@num}}%
+         \fi}%
+    \or
+    \foreach \x in  {0,...,\thetkzb@ca}{%
+       \pgfmathparse{\cmdGR@cl@RA*(\x)}
+       \let\tkzb@result\pgfmathresult
+       \ifGR@cl@Math%
+           \presetkeys [GR] {vertex} {Math = true}{}%
+           \ifthenelse{\equal{\cmdGR@cl@num}{}}{%
+           \write@math{\cmdGR@cl@RS}{\tkzb@result}{\x}}{%
+           \write@math{\cmdGR@cl@RS}{\tkzb@result}{\cmdGR@cl@num\x}}%
+       \else
+           \ifthenelse{\equal{\cmdGR@cl@num}{}}{%
+           \write@nomath{\cmdGR@cl@RS}{\tkzb@result}{\x}}{%
+           \write@nomath{\cmdGR@cl@RS}{\tkzb@result}{\cmdGR@cl@num\x}}%
+       \fi}%
+    \fi
+\endgroup%
+}
+
+\newcommand*{\tree}[3][]{%
+\begingroup%
+    \setkeys[GR]{cl}{#1}
+     \pgfmathsetcounter{tkzb@ca}{#2-1}
+     \pgfmathsetcounter{tkzb@cb}{#2}
+     \foreach \lg in {0,...,\thetkzb@ca}{%
+        \pgfmathsetcounter{tkzb@cb}{#2-\lg}
+        \setcounter{tkzb@cb}{\thetkzb@cb}
+        \edef\tkzb@rtemp{\cmdGR@cl@RA}
+        \edef\tkzb@ptemp{\cmdGR@cl@prefix}
+        \pgfmathmultiply{\cmdGR@cl@RA}{\lg}
+        \let\myresult\pgfmathresult
+        \pgfmathparse{2^\lg-1}
+        \let\tkzaxpos\pgfmathresult
+        \begin{scope}[xshift=\tkzaxpos cm]
+          \pgfmathparse{2^(\lg+1)}
+          \let\myra\pgfmathresult
+           \row[#1,%
+                   RA     = \myra,%
+                   RS     = \myresult,%
+                   prefix = \tkzb@ptemp,%
+                   num    = \lg]{2^(\thetkzb@cb-1)}%
+        \end{scope}%
+     }
+    \pgfmathsetcounter{tkzb@ca}{#2-2}
+        \foreach \x in  {0,...,\thetkzb@ca}{%
+          \pgfmathparse{2^(\thetkzb@ca-\x)-1}
+          \pgfmathsetcounter{tkzb@v}{\pgfmathresult}
+          \foreach \y in  {0,...,\thetkzb@v}{%
+              \pgfmathsetcounter{tkzb@temp}{\x+1}
+              \pgfmathnewcounter{son}
+              \pgfmathsetcounter{son}{\y*2}
+              \arc{\cmdGR@cl@prefix\y\thetkzb@temp}%
+              {\cmdGR@cl@prefix\the\c@son\x}{0}
+              \pgfmathsetcounter{son}{\y*2+1}
+              \arc{\cmdGR@cl@prefix\y\thetkzb@temp}%
+              {\cmdGR@cl@prefix\the\c@son\x}{1}%
+          }%
+        }
+\endgroup%
+}

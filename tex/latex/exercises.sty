@@ -1,0 +1,113 @@
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{exercises}[2010/05/05]
+
+\RequirePackage{fancyhdr}
+\RequirePackage{hyperref}
+\RequirePackage{ifthen}
+\RequirePackage{kvoptions,etoolbox}
+
+\hypersetup{
+    colorlinks=true,
+    linkcolor=black
+}
+
+\SetupKeyvalOptions{family=ex,prefix=ex@}
+
+\DeclareBoolOption{inline}
+
+\ProcessKeyvalOptions*
+
+% Output File for answers
+\newwrite\answersFile
+\immediate\openout\answersFile=\jobname.ans
+
+% COUNTERS
+\newcounter{exerctr}[section]
+\renewcommand\theexerctr{\thesection.\arabic{exerctr}}
+\newcounter{subexerctr}[exerctr]
+\renewcommand\thesubexerctr{\alph{subexerctr})}
+
+\newtoks\@temptokenz
+
+\newcommand{\CurrentSection}{}
+\renewcommand{\section}[1]{
+    \@temptokenz{#1}%
+    \renewcommand{\CurrentSection}{\the\@temptokenz}
+
+    \@startsection {section}{1}{\z@}%
+        {-3.5ex \@plus -1ex \@minus -.2ex}%
+        {2.3ex \@plus.2ex}%
+        {\normalfont\Large\bfseries}{#1}
+}
+
+% COMMANDS
+
+\newcommand{\Answer}[1]{%
+    \ifbool{ex@inline}{%
+    \paragraph{Respuesta}%
+        $\;$\\
+        
+        #1
+        $\;$\\
+
+    }{%
+        \@temptokenz{#1}
+        \immediate\write\answersFile{\string\WriteAnswer{\theexerctr}{\the\@temptokenz}}
+    }
+}
+
+\newcommand{\SubAnswer}[1]{%
+    \ifbool{ex@inline}{%
+    \paragraph{Respuesta} %
+        $\;$\\
+        
+        #1
+        $\;$\\
+    }{%
+        \@temptokenz{#1}
+        \immediate\write\answersFile{\string\WriteSubAnswer{\thesubexerctr}{\the\@temptokenz}}
+    }
+}
+
+\newcommand{\PrintAnswers}{%
+    \ifbool{ex@inline}{%
+    }{%
+        \immediate\closeout\answersFile
+        \input{\jobname.ans}
+    }
+}
+
+% ENVIRONMENTS
+
+\newenvironment{Exercises}{%
+    \immediate\write\answersFile{\string\WriteSec{\thesection}{\CurrentSection}}
+    \begin{list}{\textbf{\theexerctr}}{%
+                \usecounter{exerctr}%
+                \renewcommand{\makelabel}[1]{##1 \label{ex:\theexerctr}}}
+}{
+    \end{list}
+}
+
+\newenvironment{SubExercises}[1][with-answers]{%
+    \ifthenelse{\equal{no-answers}{#1} \or \equal{no-answer}{#1}}{}{
+        \immediate\write\answersFile{\string\WriteAnswer{\theexerctr}{}}
+    }
+    \begin{list}{\textbf{\thesubexerctr}}{\usecounter{subexerctr}}
+}{
+    \end{list}
+}
+
+% Commands that typeset the answers
+\newcommand{\WriteSec}[2]{
+    \setlength{\parindent}{0cm}\textbf{\Large #1}%
+    \nobreakspace{}{\Large #2} \\\\
+}
+\newcommand{\WriteAnswer}[2]{
+    \setlength{\parindent}{0.5cm}%
+    \indent\hyperref[ex:#1]{\textbf{#1}} #2\\\\
+}
+\newcommand{\WriteSubAnswer}[2]{
+    \setlength{\parindent}{1cm}
+    \setlength{\parskip}{1mm}
+    \indent\textbf{#1} #2\\\\
+}
